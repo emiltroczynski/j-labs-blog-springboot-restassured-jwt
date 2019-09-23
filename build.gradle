@@ -32,12 +32,12 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion"
     implementation "com.h2database:h2"
     testImplementation "org.testng:testng:6.14.3"
+    testImplementation "io.rest-assured:rest-assured:4.1.1"
+    testImplementation "io.rest-assured:json-path:4.1.1"
+    testImplementation "io.rest-assured:xml-path:4.1.1"
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
 }
 
 application {
     mainClassName = 'jlabsblog.jwt.App'
-}
-
-test {
-    useTestNG()
 }
