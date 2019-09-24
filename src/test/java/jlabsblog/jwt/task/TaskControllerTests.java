@@ -2,20 +2,60 @@ package jlabsblog.jwt.task;
 
 import static io.restassured.RestAssured.given;
 
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.specification.RequestSpecification;
 import java.util.Arrays;
+import jlabsblog.jwt.security.JwtSecurityConstants;
+import jlabsblog.jwt.user.JwtUser;
 import org.assertj.core.api.SoftAssertions;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class TaskControllerTests {
   private Long id;
   private Task task;
+  private RequestSpecification specification;
+
+  @BeforeClass
+  public void authorization() {
+    JwtUser user = new JwtUser();
+    user.setUsername("username");
+    user.setPassword("password");
+
+    given()
+        .basePath("/users/sign-up")
+        .contentType("application/json")
+        .body(user)
+        .when()
+        .post()
+        .then()
+        .statusCode(200);
+
+    String token =
+        given()
+            .basePath("/login")
+            .contentType("application/json")
+            .body(user)
+            .when()
+            .post()
+            .then()
+            .statusCode(200)
+            .extract()
+            .header(JwtSecurityConstants.HEADER_STRING);
+
+    specification =
+        new RequestSpecBuilder()
+            .addHeader(JwtSecurityConstants.HEADER_STRING, token)
+            .setBasePath("/tasks")
+            .build();
+  }
 
   @BeforeMethod
   public void createTask() {
     task = new Task("initialValue");
-    given().basePath("/tasks").contentType("application/json").body(task).when().post();
+    given().spec(specification).contentType("application/json").body(task).when().post();
   }
 
   @AfterMethod
@@ -38,7 +78,7 @@ public class TaskControllerTests {
     Task retrievedTask = retrieveTask();
 
     given()
-        .basePath("/tasks")
+        .spec(specification)
         .contentType("application/json")
         .when()
         .body(updatedTask)
@@ -56,7 +96,7 @@ public class TaskControllerTests {
     Task retrievedTask = retrieveTask();
 
     given()
-        .basePath("/tasks")
+        .spec(specification)
         .when()
         .delete(String.format("%s", retrievedTask.getId()))
         .then()
@@ -73,7 +113,7 @@ public class TaskControllerTests {
     Task retrievedTask =
         Arrays.stream(
                 given()
-                    .basePath("/tasks")
+                    .spec(specification)
                     .when()
                     .get()
                     .then()
@@ -92,7 +132,7 @@ public class TaskControllerTests {
 
   private void deleteTask(Long id) {
     if (id != null) {
-      given().basePath("/tasks").when().delete(String.format("%s", id)).then().statusCode(200);
+      given().spec(specification).when().delete(String.format("%s", id)).then().statusCode(200);
     }
   }
 
