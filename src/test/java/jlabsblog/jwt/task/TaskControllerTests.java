@@ -3,20 +3,30 @@ package jlabsblog.jwt.task;
 import static io.restassured.RestAssured.given;
 
 import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.specification.RequestSpecification;
 import java.util.Arrays;
 import jlabsblog.jwt.security.JwtSecurityConstants;
 import jlabsblog.jwt.user.JwtUser;
 import org.assertj.core.api.SoftAssertions;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TaskControllerTests {
+@TestPropertySource("file:src/main/resources/application.properties")
+public class TaskControllerTests extends AbstractTestNGSpringContextTests {
   private Long id;
   private Task task;
   private RequestSpecification specification;
+
+  @Value("${server.port}")
+  private int portNumber;
 
   @BeforeClass
   public void authorization() {
@@ -26,6 +36,7 @@ public class TaskControllerTests {
 
     given()
         .basePath("/users/sign-up")
+        .port(portNumber)
         .contentType("application/json")
         .body(user)
         .when()
@@ -36,6 +47,7 @@ public class TaskControllerTests {
     String token =
         given()
             .basePath("/login")
+            .port(portNumber)
             .contentType("application/json")
             .body(user)
             .when()
@@ -49,6 +61,9 @@ public class TaskControllerTests {
         new RequestSpecBuilder()
             .addHeader(JwtSecurityConstants.HEADER_STRING, token)
             .setBasePath("/tasks")
+            .setPort(portNumber)
+            .addFilter(new RequestLoggingFilter(LogDetail.ALL))
+            .addFilter(new ResponseLoggingFilter(LogDetail.ALL))
             .build();
   }
 
